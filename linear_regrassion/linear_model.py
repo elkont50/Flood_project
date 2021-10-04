@@ -24,7 +24,7 @@ j=""
 
 def linear_model():
     try:
-      mydb = connection.connect(host="localhost", database = 'sensor_data',user="root", passwd="",use_pure=True)
+      mydb = connection.connect(host="localhost",port=3307, database = 'fp_test',user="root", passwd="",use_pure=True)
       query = "Select * FROM sensor_data WHERE thingName BETWEEN 'NIVÅ001' AND 'NIVÅ033' AND data_type='waterLevelMmAdjustedRH2000';"
       result_dataFrame = pd.read_sql(query,mydb)
       #convert
@@ -59,6 +59,7 @@ def linear_model():
         r_sq =float(r_sq)
         #
         y_pred = regressor.predict(x_test)
+
         # The mean squared error
         r2 ='Mean squared error: %.2f' % mean_squared_error(y_test, y_pred) 
         print('Mean squared error: %.2f'
@@ -71,6 +72,16 @@ def linear_model():
         print(intercept)
         print('Intercept: \n', regressor.intercept_)
         print("-------------------------")
+        #plot
+        
+        plt.scatter(x_train, y_train, color = "red", label="Data point")
+        plt.plot(x_train, regressor.predict(x_train), color = "green", label="Linear Regression")
+        plt.title("Water Level vs Rain (Training set)")
+        plt.xlabel("Rain")
+        plt.ylabel("Water Level")
+        plt.legend()
+        plt.show()
+
         #last rain value
         rain = result_dataFrame[["smhi_rain"]].tail(1)        
         #print(rain)
@@ -167,7 +178,7 @@ def linear_model():
         #run predic function
         ml()
         #
-        print("Thing fetching finished")  
+      print("Thing fetching finished")  
     except Exception as e:
     # Rolling back in case of error
       mydb.rollback()

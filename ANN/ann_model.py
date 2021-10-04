@@ -1,307 +1,284 @@
-{
- "cells": [
-  {
-   "cell_type": "code",
-   "execution_count": None,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "# -*- coding: utf-8 -*-\n",
-    "import pandas as pd\n",
-    "from pandas._libs.tslibs import timestamps\n",
-    "import datetime \n",
-    "from datetime import datetime \n",
-    "import time\n",
-    "import numpy as np\n",
-    "import matplotlib\n",
-    "from matplotlib import pyplot as plt\n",
-    "import pymysql\n",
-    "from  sklearn.model_selection import train_test_split\n",
-    "from sklearn.metrics import r2_score\n",
-    "from datetime import datetime\n",
-    "import joblib\n",
-    "from sklearn.metrics import mean_squared_error,confusion_matrix, accuracy_score\n",
-    "from mpl_toolkits.mplot3d import Axes3D\n",
-    "Axes3D = Axes3D  # pycharm auto import\n",
-    "#Import the Keras libraries and packages\n",
-    "import tensorflow as tf\n",
-    "from tensorflow import keras \n",
-    "from keras.models import Sequential\n",
-    "from keras.layers import LSTM\n",
-    "from keras.layers import Dense,Dropout\n",
-    "from sklearn.preprocessing import StandardScaler\n",
-    "import seaborn as sns\n",
-    "from pandas.tseries.holiday import USFederalHolidayCalendar\n",
-    "from pandas.tseries.offsets import CustomBusinessDay\n",
-    "#us_bd = CustomBusinessDay(calendar=USFederalHolidayCalendar())\n",
-    "\n",
-    "# Gloabla variable\n",
-    "predicted_waterLevel=\"\"\n",
-    "level_word=\"\"\n",
-    "result = []\n",
-    "things=\"\"\n",
-    "thing=\"\"\n",
-    "j=\"\""
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": None,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "def model():\n",
-    "#print(\"Start..!\")\n",
-    "#waterlevel range 1 \n",
-    "  \n",
-    "    mydb=pymysql.connect(host='localhost',port=int(3306),user='root',passwd='',db='sensor_data') \n",
-    "    #\n",
-    "def ml():\n",
-    "       \n",
-    "        query2=\"Select cast(thingName as char) as seaLevel,ROW_NUMBER() OVER (ORDER BY id) row_num, cast(value as char) as sea_value FROM sensor_data WHERE thingName BETWEEN 'NIVÅ015' AND 'NIVÅ016' AND data_type='waterLevelMmAdjustedRH2000';\"\n",
-    "        df2=pd.read_sql(query2,mydb)\n",
-    "        query3=\"Select  cast(thingName as char) as groundLevel, ROW_NUMBER() OVER (ORDER BY id) row_num, cast(value as char) as ground_value,smhi_rain  FROM sensor_data WHERE data_type='waterLevel';\"\n",
-    "        df3=pd.read_sql(query3,mydb)\n",
-    "        # read values\n",
-    "        #print(df1)\n",
-    "        #print(df2)\n",
-    "        #print(df3)\n",
-    "        thing = j\n",
-    "        print(\"thing name in ml()\",thing)\n",
-    "        #Separate dates for future plotting\n",
-    "        result[\"Date\"] = pd.to_datetime(result[\"Date\"])\n",
-    "        train_dates = result[\"Date\"] \n",
-    "\n",
-    "        print(train_dates)\n",
-    "        #print(train_dates.tail(15))#Check last few dates. \n",
-    "        # read values\n",
-    "        #print(df1)\n",
-    "        #print(df2)\n",
-    "        #print(df3)\n",
-    "        #waterlevel range 1\n",
-    "        df1_1= result[[\"row_num\",\"waterLevel\",\"water_value\"]]\n",
-    "        df2_2=pd.DataFrame(df2[[\"row_num\",\"seaLevel\",\"sea_value\"]])\n",
-    "        df3_3=pd.DataFrame(df3[[\"row_num\",\"groundLevel\",\"ground_value\",\"smhi_rain\"]])\n",
-    "        #print reading result\n",
-    "        #print(df1_1)\n",
-    "        #print(df2_2)\n",
-    "        #print(df3_3)\n",
-    "        # concatniting data\n",
-    "        #dataframe=[df3_3,df2_2,df1_1]\n",
-    "        #df1.merge(df2_2,how='left', left_on='Column1', right_on='ColumnA')\n",
-    "        df=pd.merge(df3_3,df1_1, on='row_num')\n",
-    "        df_last=pd.merge(df,df2_2, on='row_num')\n",
-    "        print(df_last)\n",
-    "\n",
-    "        # x, y with sklearn convert to nump.ndarray\n",
-    "        df_last = df_last[[\"water_value\",\"smhi_rain\",\"sea_value\",\"ground_value\"]].to_numpy()# here we have 4 variables for multiple regression. \n",
-    "        #y = df_last[[\"water_value\"]].to_numpy() \n",
-    "        #df_last=pd.merge(x,y, on=\"row_num\")\n",
-    "        #print(x)\n",
-    "        #print(df_last)\n",
-    "        # normalize the dataset\n",
-    "        scaler = StandardScaler()\n",
-    "        scaler=scaler.fit(df_last)\n",
-    "        df_x=scaler.transform(df_last)\n",
-    "        #As required for LSTM networks, we require to reshape an input data into n_samples x timesteps x n_features. \n",
-    "        #In this example, the n_features is 4. We will make timesteps = 15 (past days data used for training). \n",
-    "\n",
-    "        #Empty lists to be populated using formatted training data\n",
-    "        x_train = []\n",
-    "        y_train = []\n",
-    "\n",
-    "        n_future = 1   # Number of days we want to look into the future based on the past days.\n",
-    "        n_past = 15  # Number of past days we want to use to predict the future.\n",
-    "\n",
-    "        #Reformat input data into a shape: (n_samples x timesteps x n_features)\n",
-    "        #the df_x has a shape (3208, 4)\n",
-    "        #3208 refers to the number of data points and 4 refers to the columns (multi-variables).\n",
-    "        for i in range(n_past, len(df_x) - n_future +1):\n",
-    "                x_train.append(df_x[i - n_past:i, 0:df_x.shape[1]])\n",
-    "                y_train.append(df_x[i + n_future - 1:i + n_future, 0])\n",
-    "\n",
-    "        x_train,y_train = np.array(x_train), np.array(y_train)\n",
-    "\n",
-    "        #print(x_train)\n",
-    "        #print(y_train)\n",
-    "        #print('x_train shape == {}.'.format(x_train.shape))\n",
-    "        #print('y_train shape == {}.'.format(y_train.shape))\n",
-    "       \n",
-    "        # define the Autoencoder model\n",
-    "\n",
-    "        model = Sequential()\n",
-    "        model.add(LSTM(64, activation='relu', input_shape=(x_train.shape[1], x_train.shape[2]), return_sequences=True))\n",
-    "        model.add(LSTM(32, activation='relu', return_sequences=False))\n",
-    "        model.add(Dropout(0.2))\n",
-    "        model.add(Dense(y_train.shape[1]))\n",
-    "\n",
-    "        model.compile(optimizer='adam', loss='mse',metrics=['mean_squared_error', 'mean_absolute_error', 'mean_absolute_percentage_error'])\n",
-    "        model.summary()\n",
-    "        # fit the model\n",
-    "        history = model.fit(x_train, y_train, epochs=5, batch_size=16, validation_split=0.1, verbose=1)\n",
-    "       \n",
-    "        # print(y_pred)\n",
-    "\n",
-    "        plt.plot(history.history['loss'], label='Training loss')\n",
-    "        plt.plot(history.history['val_loss'], label='Validation loss')\n",
-    "        plt.legend()\n",
-    "        # plot metrics\n",
-    "        plt.plot(history.history['mean_squared_error'])\n",
-    "        plt.plot(history.history['mean_absolute_error'])\n",
-    "        plt.plot(history.history['mean_absolute_percentage_error'])\n",
-    "        plt.show()\n",
-    "        #\n",
-    "        n_future=10\n",
-    "        #n_past = 16\n",
-    "        #n_days_for_prediction=15\n",
-    "        #print(train_dates)\n",
-    "        #train_dates=pd.to_datetime(pd.Series(df1[\"Date\"]))\n",
-    "        #print(train_dates)\n",
-    "        #list(train_dates)[-1]\n",
-    "        forecast_period_dates = pd.date_range(start=datetime.now(), periods=n_future, freq='1D').tolist()\n",
-    "        #print(forecast_period_dates)\n",
-    "        #predict the next 7 days\n",
-    "        #print(x_train)\n",
-    "        forecast = model.predict(x_train[-n_future:])\n",
-    "        #print(forecast)\n",
-    "        forecast_copies =np.repeat(forecast, df_last.shape[1],axis=-1)\n",
-    "        y_pred_future = scaler.inverse_transform(forecast_copies)[:,0]\n",
-    "        #print(forecast_copies)\n",
-    "        #print(y_pred_future)\n",
-    "        # Convert timestamp to date\n",
-    "        forecast_dates = []\n",
-    "        for time_i in forecast_period_dates:\n",
-    "             forecast_dates.append(time_i.date())\n",
-    "        df_forecast = pd.DataFrame({'Date':np.array(forecast_dates), 'Water_Level_last':y_pred_future})\n",
-    "        df_forecast[\"Date\"]=pd.to_datetime(df_forecast[\"Date\"])\n",
-    "        print(df_forecast)\n",
-    "\n",
-    "        original = result[[\"Date\",\"water_value\"]]\n",
-    "        original = original.tail(10)\n",
-    "        old_value = result[\"water_value\"]\n",
-    "        old_value = old_value.tail(10)\n",
-    "        print(old_value)\n",
-    "        \n",
-    "        #test values\n",
-    "        predicted_waterLevel = df_forecast[\"Water_Level_last\"] \n",
-    "        #print(\"Water Level for next 10 days :\\n\",predicted_waterLevel) \n",
-    "        for i in predicted_waterLevel:\n",
-    "            if(i >= 800): \n",
-    "                level_1 =\"Will flood soon\"\n",
-    "                level_word = level_1 \n",
-    "        else:\n",
-    "                level_1 =\"Water level is OK\"\n",
-    "                level_word = level_1\n",
-    "        dir='C:\\\\Users\\\\alha1207\\\\ANN\\\\output\\\\files'\n",
-    "        filename ='ANN_model_'+ thing +'.sav'\n",
-    "        joblib.dump(predicted_waterLevel, dir + filename)\n",
-    "        things = thing\n",
-    "        #old_value=-176.0\n",
-    "        #predicted_waterLevel.item(0,0)\n",
-    "        #predicted_waterLevel= float(predicted_waterLevel)\n",
-    "        print(\"-------------------------\")\n",
-    "        print(\"things:\",thing)\n",
-    "        print(\"old_value:\",old_value)\n",
-    "        print(\"pridic _value:\",predicted_waterLevel)\n",
-    "        print(\"water_level:\",level_word)\n",
-    "        print(\"---------'****-------------\")\n",
-    "        # time \n",
-    "        #timestamp= datetime.datetime.now()\n",
-    "        ts = time.time()\n",
-    "        timestamp = datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')\n",
-    "        print(timestamp)\n",
-    "        cursor = mydb.cursor()\n",
-    "        cursor.execute (\n",
-    "                       \"\"\"INSERT INTO ann_result (thingName,old_value,predicted_level,comment) \n",
-    "                       VALUES(%s,%s,%s,%s) ON DUPLICATE KEY UPDATE  timestamp=%s,old_value=%s,predicted_level=%s,comment=%s\n",
-    "            \"\"\", (things,old_value,predicted_waterLevel,level_word,timestamp,old_value,predicted_waterLevel,level_word)\n",
-    "                         ) \n",
-    "     \n",
-    "        #if j ==\"NIVÅ014\":\n",
-    "        #exit()\n",
-    "print(\"model Done!\") \n",
-    "new_arry = []\n",
-    "new_arry= ['NIVÅ001','NIVÅ002','NIVÅ003','NIVÅ004','NIVÅ005','NIVÅ006','NIVÅ007','NIVÅ008','NIVÅ009','NIVÅ010','NIVÅ011','NIVÅ012','NIVÅ013','NIVÅ014',\n",
-    "\"NIVÅ015\",\"NIVÅ016\",\"NIVÅ017\",\"NIVÅ018\",\"NIVÅ020\",\"NIVÅ021\",\"NIVÅ022\",\"NIVÅ023\",\"NIVÅ024\",\"NIVÅ025\",\"NIVÅ026\",\"NIVÅ027\",\"NIVÅ028\",\"NIVÅ029\",\n",
-    "\"NIVÅ030\",\"NIVÅ031\",\"NIVÅ032\",\"NIVÅ033\"]\n",
-    "#print(\"data:\",data)'\n",
-    "    \n",
-    "for j in new_arry:\n",
-    "        \n",
-    "    thing = j\n",
-    "    print(\"thing name:\",j)\n",
-    "    #print(\"data lenght:\",len(result_dataFrame['thingName']))\n",
-    "    mydb=pymysql.connect(host='localhost',port=int(3306),user='root',passwd='',db='sensor_data') \n",
-    "    cursor = mydb.cursor()\n",
-    "    query = \"\"\"SELECT cast(timestamp as char) as Date, cast(thingName as char) as waterLevel, ROW_NUMBER() OVER(ORDER BY id) row_num, cast(value as char) as water_value FROM sensor_data WHERE thingName=%s AND data_type='waterLevelMmAdjustedRH2000'\"\"\"\n",
-    "    #\n",
-    "    result = cursor.execute(query,(thing,))\n",
-    "    result = cursor.fetchall()\n",
-    "    #print(result)\n",
-    "    #\n",
-    "    #cast(thingName as char) as waterLevel, ROW_NUMBER() OVER(ORDER BY id) row_num, cast(value as char) as water_value\n",
-    "    #convert\n",
-    "    #result=pd.DataFrame(result[[\"row_num\",\"waterLevel\",\"water_value\"]])\n",
-    "        \n",
-    "    result = pd.DataFrame(result)\n",
-    "    #print(result)\n",
-    "    #\n",
-    "    #print(result.head())\n",
-    "    #\n",
-    "    result.columns = ['Date','waterLevel','row_num', 'water_value']\n",
-    "    #\n",
-    "    print(result)\n",
-    "    #\n",
-    "        \n",
-    "    #print(\"this result for one thing:\", df1_1)\n",
-    "    #run predic function\n",
-    "    print(\"thing name:\",j)     \n",
-    "    ml()\n",
-    "    #\n",
-    "    print(\"Thing fetching finished\")\n",
-    "    "
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count":None,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "## database cloding \n",
-    "mydb.commit()\n",
-    "cursor.close()\n",
-    "mydb.close() #close the connection\n",
-    "print(\"Database closed!\")"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": None,
-   "metadata": {},
-   "outputs": [],
-   "source": []
-  }
- ],
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python 3",
-   "language": "python",
-   "name": "python3"
-  },
-  "language_info": {
-   "codemirror_mode": {
-    "name": "ipython",
-    "version": 3
-   },
-   "file_extension": ".py",
-   "mimetype": "text/x-python",
-   "name": "python",
-   "nbconvert_exporter": "python",
-   "pygments_lexer": "ipython3",
-   "version": "3.8.5"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 4
-}
+# -*- coding: utf-8 -*-
+import pandas as pd
+from pandas._libs.tslibs import timestamps
+import datetime 
+from datetime import datetime 
+import time
+import numpy as np
+import matplotlib
+from matplotlib import pyplot as plt
+import pymysql
+from  sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score
+from datetime import datetime
+import joblib
+from sklearn.metrics import mean_squared_error,confusion_matrix, accuracy_score
+from mpl_toolkits.mplot3d import Axes3D
+Axes3D = Axes3D  # pycharm auto import
+#Import the Keras libraries and packages
+import tensorflow as tf
+from tensorflow import keras 
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import LSTM
+from tensorflow.keras.layers import Dense,Dropout
+from sklearn.preprocessing import StandardScaler
+import seaborn as sns
+from pandas.tseries.holiday import USFederalHolidayCalendar
+from pandas.tseries.offsets import CustomBusinessDay
+import json
+#us_bd = CustomBusinessDay(calendar=USFederalHolidayCalendar())
+
+# Gloabla variable
+predicted_waterLevel=""
+level_word=[]
+result = []
+things=""
+thing=""
+j=""
+
+def model():
+#print("Start..!")
+#waterlevel range 1 
+    mydb=pymysql.connect(host='localhost',port=int(3307),user='root',password='',db='flood_prediction') 
+    #
+def ml():
+        thing = j
+        
+        cursor = mydb.cursor()
+        query1="""SELECT cast(timestamp as char) as Date, cast(thingName as char) as waterLevel, ROW_NUMBER() OVER(ORDER BY id) row_num, cast(value as char) as water_value FROM sensor_data WHERE thingName=%s AND data_type='waterLevelMmAdjustedRH2000'"""
+        result_q1 = cursor.execute(query1,(thing,))
+        result_q1 = cursor.fetchall()       
+        result_q1 = pd.DataFrame(result_q1)
+        result_q1.columns = ['Date','waterLevel','row_num', 'water_value']
+        
+        query2="Select cast(thingName as char) as seaLevel,ROW_NUMBER() OVER (ORDER BY id) row_num, cast(value as char) as sea_value FROM sensor_data WHERE thingName BETWEEN 'NIVÅ015' AND 'NIVÅ016' AND data_type='waterLevelMmAdjustedRH2000';"
+        df2=pd.read_sql(query2,mydb)
+        
+        query3="Select  cast(thingName as char) as groundLevel, ROW_NUMBER() OVER (ORDER BY id) row_num, cast(value as char) as ground_value,smhi_rain  FROM sensor_data WHERE data_type='waterLevel';"
+        df3=pd.read_sql(query3,mydb)
+        
+        # read values
+        #print(df1)
+        #print(df2)
+        #print(df3)
+        
+        #print("thing name in ml()",thing)
+        #Separate dates for future plotting and insertion in db
+        result["Date"] = pd.to_datetime(result["Date"])
+        
+        old_date = result["Date"].tail(10)
+        
+        result_q1["Date"] = pd.to_datetime(result_q1["Date"])
+        train_dates = result_q1["Date"]  
+
+        #print(train_dates)
+        #print(train_dates.tail(15))#Check last few dates. 
+        # read values
+        #print(df1)
+        #print(df2)
+        #print(df3)
+        #waterlevel range 1
+        df1_1= result_q1[["row_num","waterLevel","water_value"]]
+        df2_2=pd.DataFrame(df2[["row_num","seaLevel","sea_value"]])
+        df3_3=pd.DataFrame(df3[["row_num","groundLevel","ground_value","smhi_rain"]])
+        #print reading result
+        #print(df1_1)
+        #print(df2_2)
+        #print(df3_3)
+        # concatniting data
+        #dataframe=[df3_3,df2_2,df1_1]
+        #df1.merge(df2_2,how='left', left_on='Column1', right_on='ColumnA')
+        df=pd.merge(df3_3,df1_1, on='row_num')
+        df_last=pd.merge(df,df2_2, on='row_num')
+        #print(df_last)
+
+        # x, y with sklearn convert to nump.ndarray
+        df_last = df_last[["water_value","smhi_rain","sea_value","ground_value"]].to_numpy()# here we have 4 variables for multiple regression. 
+        
+        #y = df_last[["water_value"]].to_numpy() 
+        #df_last=pd.merge(x,y, on="row_num")
+        #print(x)
+        #print(df_last)
+        # normalize the dataset
+        scaler = StandardScaler()
+        scaler=scaler.fit(df_last)
+        df_x=scaler.transform(df_last)
+        #As required for LSTM networks, we require to reshape an input data into n_samples x timesteps x n_features. 
+        #In this example, the n_features is 4. We will make timesteps = 15 (past days data used for training). 
+
+        #Empty lists to be populated using formatted training data
+        x_train = []
+        y_train = []
+
+        n_future = 1   # Number of days we want to look into the future based on the past days.
+        n_past = 15  # Number of past days we want to use to predict the future.
+
+        #Reformat input data into a shape: (n_samples x timesteps x n_features)
+        #the df_x has a shape (3208, 4)
+        #3208 refers to the number of data points and 4 refers to the columns (multi-variables).
+        for i in range(n_past, len(df_x) - n_future +1):
+                x_train.append(df_x[i - n_past:i, 0:df_x.shape[1]])
+                y_train.append(df_x[i + n_future - 1:i + n_future, 0])
+
+        x_train,y_train = np.array(x_train), np.array(y_train)
+
+        #print(x_train)
+        #print(y_train)
+        #print('x_train shape == {}.'.format(x_train.shape))
+        #print('y_train shape == {}.'.format(y_train.shape))
+       
+        # define the Autoencoder model
+
+        model = Sequential()
+        model.add(LSTM(64, activation='relu', input_shape=(x_train.shape[1], x_train.shape[2]), return_sequences=True))
+        model.add(LSTM(32, activation='relu', return_sequences=False))
+        model.add(Dropout(0.2))
+        model.add(Dense(y_train.shape[1]))
+
+        model.compile(optimizer='adam', loss='mse',metrics=['mean_squared_error', 'mean_absolute_error', 'mean_absolute_percentage_error'])
+        model.summary()
+        # fit the model
+        history = model.fit(x_train, y_train, epochs=5, batch_size=16, validation_split=0.1, verbose=1)
+       
+        # print(y_pred)
+
+        plt.plot(history.history['loss'], label='Training loss')
+        plt.plot(history.history['val_loss'], label='Validation loss')
+        plt.legend()
+        # plot metrics
+        plt.plot(history.history['mean_squared_error'])
+        plt.plot(history.history['mean_absolute_error'])
+        plt.plot(history.history['mean_absolute_percentage_error'])
+        plt.show()
+        #
+        n_future=10
+        #n_past = 16
+        #n_days_for_prediction=15
+        #print(train_dates)
+        #train_dates=pd.to_datetime(pd.Series(df1["Date"]))
+        #print(train_dates)
+        #list(train_dates)[-1]
+        forecast_period_dates = pd.date_range(start=datetime.now(), periods=n_future, freq='1D').tolist()
+        #print(forecast_period_dates)
+        #predict the next 7 days
+        #print(x_train)
+        forecast = model.predict(x_train[-n_future:])
+        #print(forecast)
+        forecast_copies =np.repeat(forecast, df_last.shape[1],axis=-1)
+        y_pred_future = scaler.inverse_transform(forecast_copies)[:,0]
+        #print(forecast_copies)
+        #print(y_pred_future)
+        # Convert timestamp to date
+        forecast_dates = []
+        for time_i in forecast_period_dates:
+             forecast_dates.append(time_i.date())
+        df_forecast = pd.DataFrame({'Date':np.array(forecast_dates), 'Water_Level_last':y_pred_future})
+        df_forecast["Date"]=pd.to_datetime(df_forecast["Date"])
+       
+        #print(df_forecast)
+        #data preper for insertion in db
+        
+        Date_last = result["Date"]
+        Date_last = Date_last.tail(10)
+       
+        #    
+        old_value = result["water_value"]
+        old_value = old_value.tail(10)
+        print(old_value)
+        
+        #test values
+        predicted_waterLevel = df_forecast["Water_Level_last"] 
+        #print("Water Level for next 10 days :\n",predicted_waterLevel) 
+        for i in predicted_waterLevel:
+            if(i >= 800): 
+                level_1 ="Will flood soon"
+                level_word.append(level_1) 
+        else:
+                level_1 ="Water level is OK"
+                level_word.append(level_1) 
+                
+        dir='C:\\Users\\ASUS\\ANN\\output\\files'
+        filename ='ANN_model_'+ thing +'.sav'
+        joblib.dump(predicted_waterLevel, dir + filename)
+        things = thing
+        
+        new_date=df_forecast["Date"]
+        
+        print("-------------------------")
+        print("things:",thing)
+        print("old_date:",old_date.to_numpy())
+        print("old_value:",old_value.to_numpy())
+        print("pridic_value:",predicted_waterLevel.to_numpy())
+        print("forcast_date",new_date.to_numpy() )
+        print("water_level:",level_word)
+        print("---------'****-------------")
+        
+        # time 
+        #timestamp= datetime.datetime.now()
+        #ts = time.time()
+        #timestamp = datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+        #print(timestamp)
+        
+        old_date_json=json.dumps(old_date.to_numpy().tolist())
+        old_value_json=json.dumps(old_value.to_numpy().tolist())
+        pridic_value_json=json.dumps(predicted_waterLevel.to_numpy().tolist())
+        forcast_date_json=json.dumps(new_date.to_numpy().tolist())
+        water_level_json=json.dumps(level_word)
+        
+        cursor = mydb.cursor()
+        cursor.execute (
+                       """INSERT INTO ann_result  
+                       SET thingName=%s,old_date=%s,old_value=%s,predicted_level=%s,forcast_date=%s,comment=%s          
+            """, (thing,old_date_json,old_value_json,pridic_value_json,forcast_date_json,water_level_json)
+                         ) 
+     
+        #if j =="NIVÅ014":
+        #exit()
+        print("model Done!") 
+
+new_arry = []
+new_arry= ['NIVÅ001','NIVÅ002','NIVÅ003','NIVÅ004','NIVÅ005','NIVÅ006','NIVÅ007','NIVÅ008','NIVÅ009','NIVÅ010','NIVÅ011','NIVÅ012','NIVÅ013','NIVÅ014',
+"NIVÅ015","NIVÅ016","NIVÅ017","NIVÅ018","NIVÅ020","NIVÅ021","NIVÅ022","NIVÅ023","NIVÅ024","NIVÅ025","NIVÅ026","NIVÅ027","NIVÅ028","NIVÅ029",
+"NIVÅ030","NIVÅ031","NIVÅ032","NIVÅ033"]
+#print("data:",data)'
+    
+for j in new_arry:
+        
+    thing = j
+    print("thing name:",j)
+    #print("data lenght:",len(result_dataFrame['thingName']))
+    mydb=pymysql.connect(host='localhost',port=int(3307),user='root',passwd='',db='flood_prediction') 
+    cursor = mydb.cursor()
+    query = """SELECT DATE(timestamp) as Date, cast(thingName as char) as waterLevel, ROW_NUMBER() OVER(ORDER BY id) row_num, cast(value as char) as water_value FROM sensor_data WHERE thingName=%s AND data_type='waterLevelMmAdjustedRH2000' GROUP BY DATE(timestamp)  ORDER BY Date DESC LIMIT 10"""
+    #
+    result = cursor.execute(query,(thing,))
+    result = cursor.fetchall()
+    #print(result)
+    #
+    #cast(thingName as char) as waterLevel, ROW_NUMBER() OVER(ORDER BY id) row_num, cast(value as char) as water_value
+    #convert
+    #result=pd.DataFrame(result[["row_num","waterLevel","water_value"]])
+        
+    result = pd.DataFrame(result)
+   
+    #print(result)
+    #
+    #print(result.head())
+    #
+    result.columns = ['Date','waterLevel','row_num', 'water_value']
+    #
+    #print(result)
+    #
+        
+    #print("this result for one thing:", df1_1)
+    #run predic function
+    #print("thing name:",j)     
+    ml()
+    #
+    #print("Thing fetching finished")
+    
+    ## database cloding 
+mydb.commit()
+cursor.close()
+mydb.close() #close the connection
+print("Database closed!")

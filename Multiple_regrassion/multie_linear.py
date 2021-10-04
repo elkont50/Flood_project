@@ -26,7 +26,7 @@ j=""
 def model():
     print("Start..!")
     try:
-           mydb = connection.connect(host="localhost", database = 'sensor_data',user="root", passwd="",use_pure=True)
+           mydb = connection.connect(host="localhost",port=3307, database = 'fp_test',user="root", passwd="",use_pure=True)
            #sea level
            query2 = "Select cast(thingName as char) as seaLevel,ROW_NUMBER() OVER(ORDER BY id) row_num, cast(value as char) as sea_value FROM sensor_data WHERE thingName BETWEEN 'NIVÅ015' AND 'NIVÅ016' AND data_type='waterLevelMmAdjustedRH2000';"
            df2 = pd.read_sql(query2,mydb)
@@ -78,6 +78,26 @@ def model():
              print(intercept)
              print('Intercept: \n', ml.intercept_)
              #
+
+            #plot the result 
+             fig1= plt.figure(figsize=(10,10))
+             ax = fig1.add_subplot(111, projection='3d')
+             df_last["smhi_rain"]=pd.to_numeric(df_last["smhi_rain"], downcast="float")
+             x1 = df_last["smhi_rain"]
+             df_last["water_value"]=pd.to_numeric(df_last["water_value"], downcast="float")
+             y1=df_last["water_value"]
+             df_last["sea_value"]=pd.to_numeric(df_last["sea_value"], downcast="float")
+             x2=df_last["sea_value"]
+             
+             ax.scatter(x1,x2,y1, c=(x1-x2)-y1, marker='x')
+             ax.set_xlabel('Rain')
+             ax.set_ylabel('Water Level')
+             ax.set_zlabel('Sea Level')
+             ax.axis('auto')
+             ax.axis('tight')
+             plt.show()
+
+
              values=[[8.0,40,2.79]]
              ##
              predicted_waterLevel = ml.predict(values)
@@ -88,8 +108,8 @@ def model():
              else:
                 level_1 ="Water level is OK"
                 level_word = level_1
-             dir='C:\\wamp64\\www\\Flood_project\\multiple_regrassion\\output\\files'
-             filename ='Multi_'+ thing +'.sav'
+             dir='C:\\wamp64\\www\\Flood_project\\multiple_regrassion\\output\\files\\'
+             filename ='multi_'+ thing +'.sav'
              joblib.dump(ml, dir + filename)
              # #last value is the things 24 hour befor
              old_value = result["water_value"].tail(1)
