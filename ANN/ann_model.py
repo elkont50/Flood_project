@@ -39,7 +39,7 @@ j=""
 def model():
 #print("Start..!")
 #waterlevel range 1 
-    mydb=pymysql.connect(host='localhost',port=int(3307),user='root',password='',db='flood_prediction') 
+    mydb=pymysql.connect(host='localhost',port=int(3307),user='root',password='',db='fp_test') 
     #
 def ml():
         thing = j
@@ -224,13 +224,14 @@ def ml():
         pridic_value_json=json.dumps(predicted_waterLevel.to_numpy().tolist())
         forcast_date_json=json.dumps(new_date.to_numpy().tolist())
         water_level_json=json.dumps(level_word)
+        loss=json.dumps(history.history['loss'])
+        val_loss=json.dumps(history.history['val_loss'])
+        mean_squared_error=json.dumps(history.history['mean_squared_error']) #
+        mean_absolute_error=json.dumps(history.history['mean_absolute_error'])
+        mean_absolute_percentage_error=json.dumps(history.history['mean_absolute_percentage_error'])
         
         cursor = mydb.cursor()
-        cursor.execute (
-                       """INSERT INTO ann_result  
-                       SET thingName=%s,old_date=%s,old_value=%s,predicted_level=%s,forcast_date=%s,comment=%s          
-            """, (thing,old_date_json,old_value_json,pridic_value_json,forcast_date_json,water_level_json)
-                         ) 
+        cursor.execute ("""INSERT INTO ann_result  SET thingName=%s,old_date=%s,old_value=%s,predicted_level=%s,forcast_date=%s,comment=%s,loss=%s,val_loss=%s,mean_squared_error=%s,mean_absolute_error=%s,mean_absolute_percentage_error=%s """, (thing,old_date_json,old_value_json,pridic_value_json,forcast_date_json,water_level_json,loss,val_loss,mean_squared_error,mean_absolute_error,mean_absolute_percentage_error)) 
      
         #if j =="NIVÅ014":
         #exit()
@@ -247,7 +248,7 @@ for j in new_arry:
     thing = j
     print("thing name:",j)
     #print("data lenght:",len(result_dataFrame['thingName']))
-    mydb=pymysql.connect(host='localhost',port=int(3307),user='root',passwd='',db='flood_prediction') 
+    mydb=pymysql.connect(host='localhost',port=int(3307),user='root',passwd='',db='fp_test') 
     cursor = mydb.cursor()
     query = """SELECT DATE(timestamp) as Date, cast(thingName as char) as waterLevel, ROW_NUMBER() OVER(ORDER BY id) row_num, cast(value as char) as water_value FROM sensor_data WHERE thingName=%s AND data_type='waterLevelMmAdjustedRH2000' GROUP BY DATE(timestamp)  ORDER BY Date DESC LIMIT 10"""
     #
