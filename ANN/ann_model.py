@@ -26,6 +26,7 @@ import seaborn as sns
 from pandas.tseries.holiday import USFederalHolidayCalendar
 from pandas.tseries.offsets import CustomBusinessDay
 import json
+import sys
 #us_bd = CustomBusinessDay(calendar=USFederalHolidayCalendar())
 
 # Gloabla variable
@@ -39,7 +40,7 @@ j=""
 def model():
 #print("Start..!")
 #waterlevel range 1 
-    mydb=pymysql.connect(host='localhost',port=int(3307),user='root',password='',db='fp_test') 
+    mydb=pymysql.connect(host='localhost',port=int(3307),user='root',password='',db='flood_prediction') 
     #
 def ml():
         thing = j
@@ -248,7 +249,7 @@ for j in new_arry:
     thing = j
     print("thing name:",j)
     #print("data lenght:",len(result_dataFrame['thingName']))
-    mydb=pymysql.connect(host='localhost',port=int(3307),user='root',passwd='',db='fp_test') 
+    mydb=pymysql.connect(host='localhost',port=int(3307),user='root',passwd='',db='flood_prediction') 
     cursor = mydb.cursor()
     query = """SELECT DATE(timestamp) as Date, cast(thingName as char) as waterLevel, ROW_NUMBER() OVER(ORDER BY id) row_num, cast(value as char) as water_value FROM sensor_data WHERE thingName=%s AND data_type='waterLevelMmAdjustedRH2000' GROUP BY DATE(timestamp)  ORDER BY Date DESC LIMIT 10"""
     #
