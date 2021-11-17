@@ -143,14 +143,14 @@ def ml():
        
         # print(y_pred)
 
-        #plt.plot(history.history['loss'], label='Training loss')
-        #plt.plot(history.history['val_loss'], label='Validation loss')
-        #plt.legend()
+        plt.plot(history.history['loss'], label='Training loss')
+        plt.plot(history.history['val_loss'], label='Validation loss')
+        plt.legend()
         # plot metrics
         #plt.plot(history.history['mean_squared_error'])
         #plt.plot(history.history['mean_absolute_error'])
         #plt.plot(history.history['mean_absolute_percentage_error'])
-        #plt.show()
+        plt.show()
         #
         n_future=10
         #n_past = 16
