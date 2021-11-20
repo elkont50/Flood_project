@@ -47,8 +47,8 @@ def linear_model():
         # change the data type to avoid array problem
         x = x.astype(np.float64,copy=False)
         y = y.astype(np.float64,copy=False)
-        #print("x:", x)
-        #print("y:",y)
+        print("x:", x)
+        print("y:",y)
         x_train, x_test,y_train,y_test = train_test_split(x,y,test_size =0.2, random_state=0)
         regressor = LinearRegression()
         regressor.fit(x_train,y_train)

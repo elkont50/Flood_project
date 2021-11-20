@@ -65,17 +65,22 @@ def model():
              r_sq =float(r_sq)
              #
              y_pred = ml.predict(x_test)
+
+             # r2 score
+             score=r2_score(y_test,y_pred)
+             print('r2 socre is ',score)
+
             # The mean squared error
              r2 ='Mean squared error: %.2f' % mean_squared_error(y_test, y_pred) 
              print('Mean squared error: %.2f'
               % mean_squared_error(y_test, y_pred))
              # The coefficient  
-             print('Coefficients: \n', ml.coef_)
+             #print('Coefficients: \n', ml.coef_)
              # The intercept
              # The intercept
              intercept = ml.intercept_.astype('float64')
              intercept = float(intercept)
-             print(intercept)
+             #print(intercept)
              print('Intercept: \n', ml.intercept_)
              #
 
