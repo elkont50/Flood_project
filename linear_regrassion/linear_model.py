@@ -12,6 +12,8 @@ import datetime
 import time
 import joblib
 from sklearn.metrics import mean_squared_error
+from sklearn.metrics import r2_score
+import json
 
 # Gloabla variable
 predicted_waterLevel=""
@@ -52,24 +54,27 @@ def linear_model():
         x_train, x_test,y_train,y_test = train_test_split(x,y,test_size =0.2, random_state=0)
         regressor = LinearRegression()
         regressor.fit(x_train,y_train)
-        #Coefficienrt of determination (R2)
-        r_sq = regressor.score(x_train,y_train)
-        print('coefficient of determination:', r_sq)
-        #convert to pass to db
-        r_sq =float(r_sq)
-        #
+        
         y_pred = regressor.predict(x_test)
 
+         # r2 score (Coefficienrt of determination (R2))
+        r2score=r2_score(y_test,y_pred)
+        print('r2 socre is (Coefficienrt of determination) : ',r2score)
+        r2score = float(r2score)
+
         # The mean squared error
-        r2 ='Mean squared error: %.2f' % mean_squared_error(y_test, y_pred) 
-        print('Mean squared error: %.2f'
-              % mean_squared_error(y_test, y_pred))
-        # The coefficient         
-        print('Coefficients: \n', regressor.coef_)
+        msq = mean_squared_error(y_test, y_pred) 
+        print('Mean squared error: %.2f'% msq)
+        msq = float(msq)
+        
+        # The coefficient
+        coefficients=regressor.coef_
+        coefficients=json.dumps(coefficients.tolist()) 
+        print('Coefficients: \n', coefficients)
+        
         # The intercept
         intercept = regressor.intercept_.astype('float64')
         intercept = float(intercept)
-        print(intercept)
         print('Intercept: \n', regressor.intercept_)
         print("-------------------------")
         #plot
@@ -147,11 +152,11 @@ def linear_model():
         print(timestamp)
         cursor.execute ("""
             INSERT INTO ml_result
-                (thingName,old_value,predicted_level,comment,r2,r_sq,intercept)
-                VALUES(%s,%s,%s,%s,%s,%s,%s)
+                (thingName,old_value,predicted_level,comment,r2,mean_sq_err,intercept,coefficients)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
                 ON DUPLICATE KEY UPDATE  
-                timestamp=%s,old_value=%s,predicted_level=%s,comment=%s,r2=%s,r_sq=%s,intercept=%s
-                """, (things,old_value,predicted_waterLevel,level_word,r2,r_sq,intercept,timestamp,old_value,predicted_waterLevel,level_word,r2,r_sq,intercept)) 
+                timestamp=%s,old_value=%s,predicted_level=%s,comment=%s,r2=%s,mean_sq_err=%s,intercept=%s,coefficients=%s
+                """, (things,old_value,predicted_waterLevel,level_word,r2score,msq,intercept,coefficients,timestamp,old_value,predicted_waterLevel,level_word,r2score,msq,intercept,coefficients)) 
         print("model Done!") 
               
         # for loop to loop sensor data by sensor name

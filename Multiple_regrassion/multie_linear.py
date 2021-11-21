@@ -13,6 +13,7 @@ import time
 import joblib
 from sklearn.metrics import mean_squared_error
 from mpl_toolkits.mplot3d import Axes3D
+import json
 Axes3D = Axes3D  # pycharm auto import
 
 # Gloabla variable
@@ -57,31 +58,25 @@ def model():
              ml.fit(x_train,y_train)
              #predict the test result
              y_pred=ml.predict(x_test)
-             #
-             #Coefficienrt of determination (R2)
-             r_sq = ml.score(x_train,y_train)
-             print('coefficient of determination:', r_sq)
-              #convert to pass to db
-             r_sq =float(r_sq)
-             #
-             y_pred = ml.predict(x_test)
-
-             # r2 score
-             score=r2_score(y_test,y_pred)
-             print('r2 socre is ',score)
-
+            
+             # r2 score (Coefficienrt of determination (R2))
+             r2score=r2_score(y_test,y_pred)
+             print('r2 socre is (Coefficienrt of determination) : ',r2score)
+             r2score = float(r2score)
             # The mean squared error
-             r2 ='Mean squared error: %.2f' % mean_squared_error(y_test, y_pred) 
-             print('Mean squared error: %.2f'
-              % mean_squared_error(y_test, y_pred))
-             # The coefficient  
-             #print('Coefficients: \n', ml.coef_)
-             # The intercept
+             msq = mean_squared_error(y_test, y_pred) 
+             print('Mean squared error: %.2f'% msq)
+             msq = float(msq)
+             # The coefficient
+             coefficients=ml.coef_
+             coefficients=json.dumps(coefficients.tolist()) 
+             print('Coefficients: \n', coefficients)
+
              # The intercept
              intercept = ml.intercept_.astype('float64')
              intercept = float(intercept)
              #print(intercept)
-             print('Intercept: \n', ml.intercept_)
+             print('Intercept: \n', intercept)
              #
 
             #plot the result 
@@ -138,11 +133,11 @@ def model():
              print(timestamp)
              cursor.execute ("""
                INSERT INTO multiple_result
-                (thingName,old_value,predicted_level,comment,r2,r_sq,intercept)
-                VALUES(%s,%s,%s,%s,%s,%s,%s)
+                (thingName,old_value,predicted_level,comment,r2,mean_sq_err,intercept,coefficients)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s)
                 ON DUPLICATE KEY UPDATE  
-                timestamp=%s,old_value=%s,predicted_level=%s,comment=%s,r2=%s,r_sq=%s,intercept=%s
-                """, (things,old_value,predicted_waterLevel,level_word,r2,r_sq,intercept,timestamp,old_value,predicted_waterLevel,level_word,r2,r_sq,intercept)) 
+                timestamp=%s,old_value=%s,predicted_level=%s,comment=%s,r2=%s,mean_sq_err=%s,intercept=%s,coefficients=%s
+                """, (things,old_value,predicted_waterLevel,level_word,r2score,msq,intercept,coefficients,timestamp,old_value,predicted_waterLevel,level_word,r2score,msq,intercept,coefficients)) 
      
            print("model Done!") 
            #19 is missed 
