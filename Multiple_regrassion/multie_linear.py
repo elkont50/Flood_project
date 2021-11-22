@@ -14,6 +14,8 @@ import joblib
 from sklearn.metrics import mean_squared_error
 from mpl_toolkits.mplot3d import Axes3D
 import json
+from sys import exit
+import seaborn as sn
 Axes3D = Axes3D  # pycharm auto import
 
 # Gloabla variable
@@ -44,7 +46,16 @@ def model():
              # concatniting data
              df=pd.merge(df3_3,df1_1, on="row_num")
              df_last=pd.merge(df,df2_2,on="row_num")
-             # x, y with sklearn convert to nump.ndarray
+
+             
+             cr_df = pd.DataFrame(df_last[["sea_value","ground_value","water_value","smhi_rain"]])
+             cr_df=cr_df.apply (pd.to_numeric, errors='coerce')
+             corrMatrix = cr_df.corr()
+             
+             sn.heatmap(corrMatrix, annot=True)
+             plt.show()
+             
+             # x, y with sklearn convert to nump.ndarra
              x = df_last[["smhi_rain","sea_value","ground_value"]].to_numpy()# here we have 3 variables for multiple regression. 
              y = df_last[["water_value"]].to_numpy() 
              # change the data type to avoid array problem
@@ -96,7 +107,7 @@ def model():
              ax.axis('auto')
              ax.axis('tight')
              plt.show()
-
+            
 
              values=[[8.0,40,2.79]]
              ##
