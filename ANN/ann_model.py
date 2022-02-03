@@ -36,7 +36,7 @@ result = []
 things=""
 thing=""
 j=""
-
+predict_start_date= "2021-11-13 00:00:00.000000"
 def model():
 #print("Start..!")
 #waterlevel range 1 
@@ -159,7 +159,7 @@ def ml():
         #train_dates=pd.to_datetime(pd.Series(df1["Date"]))
         #print(train_dates)
         #list(train_dates)[-1]
-        forecast_period_dates = pd.date_range(start=datetime.now(), periods=n_future, freq='1D').tolist()
+        forecast_period_dates = pd.date_range(start=predict_start_date, periods=n_future, freq='1D').tolist()
         #print(forecast_period_dates)
         #predict the next 7 days
         #print(x_train)
