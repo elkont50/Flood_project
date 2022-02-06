@@ -36,7 +36,8 @@ result = []
 things=""
 thing=""
 j=""
-predict_start_date= "2021-11-13 00:00:00.000000"
+predict_start_date= "2021-11-13 00:00:00.000000"  #n+1
+data_last_date= "2021-11-12" #n date
 def model():
 #print("Start..!")
 #waterlevel range 1 
@@ -46,16 +47,16 @@ def ml():
         thing = j
         
         cursor = mydb.cursor()
-        query1="""SELECT cast(timestamp as char) as Date, cast(thingName as char) as waterLevel, ROW_NUMBER() OVER(ORDER BY id) row_num, cast(value as char) as water_value FROM sensor_data WHERE thingName=%s AND data_type='waterLevelMmAdjustedRH2000'"""
+        query1="""SELECT cast(timestamp as char) as Date, cast(thingName as char) as waterLevel, ROW_NUMBER() OVER(ORDER BY timestamp) row_num, cast(value as char) as water_value FROM sensor_data WHERE thingName=%s AND data_type='waterLevelMmAdjustedRH2000'"""
         result_q1 = cursor.execute(query1,(thing,))
         result_q1 = cursor.fetchall()       
         result_q1 = pd.DataFrame(result_q1)
         result_q1.columns = ['Date','waterLevel','row_num', 'water_value']
         
-        query2="Select cast(thingName as char) as seaLevel,ROW_NUMBER() OVER (ORDER BY id) row_num, cast(value as char) as sea_value FROM sensor_data WHERE thingName BETWEEN 'NIVÅ015' AND 'NIVÅ016' AND data_type='waterLevelMmAdjustedRH2000';"
+        query2="Select cast(thingName as char) as seaLevel,ROW_NUMBER() OVER (ORDER BY timestamp) row_num, cast(value as char) as sea_value FROM sensor_data WHERE thingName BETWEEN 'NIVÅ015' AND 'NIVÅ016' AND data_type='waterLevelMmAdjustedRH2000';"
         df2=pd.read_sql(query2,mydb)
         
-        query3="Select  cast(thingName as char) as groundLevel, ROW_NUMBER() OVER (ORDER BY id) row_num, cast(value as char) as ground_value,smhi_rain  FROM sensor_data WHERE data_type='waterLevel';"
+        query3="Select  cast(thingName as char) as groundLevel, ROW_NUMBER() OVER (ORDER BY timestamp) row_num, cast(value as char) as ground_value,smhi_rain  FROM sensor_data WHERE data_type='waterLevel';"
         df3=pd.read_sql(query3,mydb)
         
         # read values
