@@ -27,6 +27,7 @@ from pandas.tseries.holiday import USFederalHolidayCalendar
 from pandas.tseries.offsets import CustomBusinessDay
 import json
 import sys
+import requests
 #us_bd = CustomBusinessDay(calendar=USFederalHolidayCalendar())
 
 # Gloabla variable
@@ -38,10 +39,21 @@ thing=""
 j=""
 predict_start_date= "2021-11-13 00:00:00.000000"  #n+1
 data_last_date= "2021-11-12" #n date
+save_current_result_url ="http://fp.lk/save_prediction_history"
+
+#database settings
+
+db_host = "localhost"
+db_port =3307
+db_user ="root"
+db_password =""
+db_name ="flood_prediction"
+
+
 def model():
 #print("Start..!")
 #waterlevel range 1 
-    mydb=pymysql.connect(host='localhost',port=int(3307),user='root',password='',db='flood_prediction') 
+    mydb=pymysql.connect(host=db_host,port=db_port,user=db_user,password=db_password,db=db_name) 
     #
 def ml():
         thing = j
@@ -244,13 +256,17 @@ new_arry= ['NIVÅ001','NIVÅ002','NIVÅ003','NIVÅ004','NIVÅ005','NIVÅ006','NI
 "NIVÅ015","NIVÅ016","NIVÅ017","NIVÅ018","NIVÅ020","NIVÅ021","NIVÅ022","NIVÅ023","NIVÅ024","NIVÅ025","NIVÅ026","NIVÅ027","NIVÅ028","NIVÅ029",
 "NIVÅ030","NIVÅ031","NIVÅ032","NIVÅ033"]
 #print("data:",data)'
-    
+
+#Save current ml result before running new request
+res = requests.get(save_current_result_url)
+print(res.status_code)
+
 for j in new_arry:
         
     thing = j
     print("thing name:",j)
     #print("data lenght:",len(result_dataFrame['thingName']))
-    mydb=pymysql.connect(host='localhost',port=int(3307),user='root',passwd='',db='flood_prediction') 
+    mydb=pymysql.connect(host=db_host,port=db_port,user=db_user,passwd=db_password,db=db_name) 
     cursor = mydb.cursor()
     query = """SELECT DATE(timestamp) as Date, cast(thingName as char) as waterLevel, ROW_NUMBER() OVER(ORDER BY id) row_num, cast(value as char) as water_value FROM sensor_data WHERE thingName=%s AND data_type='waterLevelMmAdjustedRH2000' GROUP BY DATE(timestamp)  ORDER BY Date DESC LIMIT 10"""
     #
