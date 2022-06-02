@@ -14,6 +14,7 @@ import joblib
 from sklearn.metrics import mean_squared_error
 from mpl_toolkits.mplot3d import Axes3D
 import json
+import sys
 from sys import exit
 import seaborn as sn
 Axes3D = Axes3D  # pycharm auto import
@@ -29,7 +30,7 @@ j=""
 def model():
     print("Start..!")
     try:
-           mydb = connection.connect(host="localhost",port=3307, database = 'fp_test',user="root", passwd="",use_pure=True)
+           mydb = connection.connect(host="localhost",port=3307, database = 'flood_prediction',user="root", passwd="",use_pure=True)
            #sea level
            query2 = "Select cast(thingName as char) as seaLevel,ROW_NUMBER() OVER(ORDER BY id) row_num, cast(value as char) as sea_value FROM sensor_data WHERE thingName BETWEEN 'NIVÅ015' AND 'NIVÅ016' AND data_type='waterLevelMmAdjustedRH2000';"
            df2 = pd.read_sql(query2,mydb)
@@ -48,11 +49,16 @@ def model():
              df_last=pd.merge(df,df2_2,on="row_num")
 
              
+             
              cr_df = pd.DataFrame(df_last[["sea_value","ground_value","water_value","smhi_rain"]])
              cr_df=cr_df.apply (pd.to_numeric, errors='coerce')
              corrMatrix = cr_df.corr()
+
+             x_axis_labels = ["sea water level","ground water level","water level","rain"] # labels for x-axis
+             y_axis_labels = ["sea water level","ground water level","water level","rain"] # labels for y-axis
              
-             sn.heatmap(corrMatrix, annot=True)
+             sn.heatmap(corrMatrix, annot=True,xticklabels=x_axis_labels, yticklabels=y_axis_labels)
+             plt.title(thing+" - Correlation matrix")
              plt.show()
              
              # x, y with sklearn convert to nump.ndarra
@@ -101,13 +107,15 @@ def model():
              x2=df_last["sea_value"]
              
              ax.scatter(x1,x2,y1, c=(x1-x2)-y1, marker='x')
-             ax.set_xlabel('Rain')
-             ax.set_ylabel('Water Level')
-             ax.set_zlabel('Sea Level')
+             ax.set_xlabel('rain (mm)')
+             ax.set_ylabel('water level (mm)')
+             ax.set_zlabel('sea level (mm)')
              ax.axis('auto')
              ax.axis('tight')
+             plt.title(thing+" - Water level vs rain, sea water level  multi linear regression")
              plt.show()
             
+             #sys.exit()
 
              values=[[8.0,40,2.79]]
              ##

@@ -15,5 +15,6 @@ def main():
 if __name__ == '__main__':
     #Timer 
     #lambda:
-    t = Timer(secs, model())
-    t.start()
+    #t = Timer(secs, model())
+    model()
+    #t.start()

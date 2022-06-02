@@ -15,5 +15,6 @@ def main():
 if __name__ == '__main__':
     #Timer 
     #lambda:
-    t = Timer(secs, linear_model())
-    t.start()
+    #t = Timer(secs, linear_model())
+    #t.start()
+    linear_model()

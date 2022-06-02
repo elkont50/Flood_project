@@ -26,7 +26,7 @@ j=""
 
 def linear_model():
     try:
-      mydb = connection.connect(host="localhost",port=3307, database = 'fp_test',user="root", passwd="",use_pure=True)
+      mydb = connection.connect(host="localhost",port=3307, database = 'flood_prediction',user="root", passwd="",use_pure=True)
       query = "Select * FROM sensor_data WHERE thingName BETWEEN 'NIVÅ001' AND 'NIVÅ033' AND data_type='waterLevelMmAdjustedRH2000';"
       result_dataFrame = pd.read_sql(query,mydb)
       #convert
@@ -81,9 +81,9 @@ def linear_model():
         
         plt.scatter(x_train, y_train, color = "red", label="Data point")
         plt.plot(x_train, regressor.predict(x_train), color = "green", label="Linear Regression")
-        plt.title("Water Level vs Rain (Training set)")
-        plt.xlabel("Rain")
-        plt.ylabel("Water Level")
+        plt.title(thing+" - Water level vs rain linear regression")
+        plt.xlabel("rain (mm)")
+        plt.ylabel("water level (mm)")
         plt.legend()
         plt.show()
 
